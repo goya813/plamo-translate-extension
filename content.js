@@ -138,8 +138,8 @@
         footer { display: flex; justify-content: flex-end; gap: 6px; padding: 6px 8px;
           border-top: 1px solid color-mix(in srgb, CanvasText 10%, transparent); }
       </style>
-      <div class="card" role="dialog" aria-label="PLaMo 翻訳">
-        <header><b>PLaMo 翻訳</b><select aria-label="翻訳先"></select><button class="x" title="閉じる (Esc)">×</button></header>
+      <div class="card" role="dialog" aria-label="PLaMo Local Translator">
+        <header><b>PLaMo Local Translator</b><select aria-label="翻訳先"></select><button class="x" title="閉じる (Esc)">×</button></header>
         <div class="body muted">翻訳中…</div>
         <footer><button class="copy">コピー</button></footer>
       </div>`;
@@ -593,7 +593,7 @@
       }
       const msg = ui.shadowRoot.querySelector(".msg");
       const busy = active && (inFlight > 0 || queue.length > 0);
-      let text = `PLaMo 翻訳（→ ${target}）${done} / ${total}`;
+      let text = `PLaMo Local Translator（→ ${target}）${done} / ${total}`;
       if (busy) text += " 翻訳中…";
       else if (active) text += " ・スクロールすると続きを翻訳";
       if (!active && lastError) text = `停止：${lastError}`;

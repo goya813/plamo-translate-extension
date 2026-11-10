@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "PLaMo 翻訳",
-  "description": "PLaMo 3 Translate で Web ページや選択テキストを翻訳します。ブラウザ内（WebGPU / CPU）、Ollama、llama-server で実行できます。",
+  "name": "PLaMo Local Translator",
+  "description": "非公式。PLaMo 3 Translate で Web ページや選択テキストを翻訳します。ブラウザ内（WebGPU / CPU）、Ollama、llama-server で実行できます。",
   "version": "0.2.0",
   "minimum_chrome_version": "124",
   "permissions": [
@@ -30,7 +30,7 @@
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
-    "default_title": "PLaMo 翻訳",
+    "default_title": "PLaMo Local Translator",
     "default_popup": "popup.html",
     "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }
   },
