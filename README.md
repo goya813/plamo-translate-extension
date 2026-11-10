@@ -40,12 +40,9 @@ Web ページや選択したテキストをローカルで翻訳する Chrome �
 
 ## リリース
 
-`manifest.json` の `version` を上げてコミットし、同じ番号のタグを push すると、GitHub Actions（`.github/workflows/release.yml`）が
-zip と SHA-256 を作って Release に添付します。タグと `version` が一致しないと失敗します。
-
-```sh
-git tag v0.2.0 && git push origin v0.2.0
-```
+`manifest.json` の `version` を上げて main にマージすると、GitHub Actions（`.github/workflows/release.yml`）が
+`v<version>` のタグと GitHub Release を自動で作り、zip と SHA-256 を添付します。
+そのタグが既にある場合（version を上げていない push）はリリースしません。
 
 手元で zip を作るときは `scripts/package.sh` を実行します（`dist/` に出力）。
 

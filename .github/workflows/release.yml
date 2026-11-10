@@ -1,20 +1,27 @@
 name: Release
 
-# v0.2.0 のようなタグを push すると、拡張の zip を作って GitHub Release に添付する。
-# 手動実行（workflow_dispatch）では zip を作って Actions の成果物にするだけで、Release は作らない。
+# main に push されたとき、manifest.json の version に対応するタグ（v0.2.0 など）がまだなければ、
+# 拡張の zip を作り、タグと GitHub Release を作成して添付する。version を上げてマージするとリリースされる。
+# 手動実行（workflow_dispatch）でも同じ判定でリリースする。タグが既にあれば zip を成果物にするだけ。
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -28,13 +35,17 @@ jobs:
             node --input-type=module --check < "$f"
           done
 
-      - name: Check that the tag matches manifest.json
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Decide the tag
+        id: version
         run: |
           version="$(python3 -c 'import json; print(json.load(open("manifest.json"))["version"])')"
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::タグ $GITHUB_REF_NAME と manifest.json の version $version が一致しません"
-            exit 1
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag は既にあるためリリースしません（リリースするには manifest.json の version を上げてください）"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Package
@@ -46,10 +57,11 @@ jobs:
           name: plamo-local-translator
           path: dist/*
 
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create the tag and the release
+        if: steps.version.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           zip="$(basename "${{ steps.package.outputs.zip }}")"
           cat > notes.md <<NOTES
@@ -66,8 +78,9 @@ jobs:
           **非公式**：この拡張は有志による非公式のツールで、Preferred Networks の「PLaMo翻訳」とは関係ありません。
           PLaMo 3 Translate のモデルは [PLaMo Community License](https://plamo.preferredai.jp/info/plamo-community-license-ja) に従って利用してください。Built with PLaMo.
           NOTES
-          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
-          else
-            gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md --generate-notes
-          fi
+          # タグは gh release create が --target のコミットに作る。
+          gh release create "$TAG" dist/* \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file notes.md \
+            --generate-notes
