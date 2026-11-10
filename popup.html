@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>PLaMo 翻訳</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body { width: 400px; margin: 0; padding: 12px; }
+      header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      header h1 { font-size: 14px; margin: 0; margin-right: auto; }
+      textarea { width: 100%; box-sizing: border-box; min-height: 96px; resize: vertical; }
+      .row { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
+      .row select { flex: 1; min-width: 0; }
+      #output { min-height: 60px; max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+        padding: 8px 10px; border-radius: 8px; background: var(--subtle); }
+      #status { font-size: 11px; color: var(--muted); margin-top: 10px; display: flex; gap: 6px; align-items: center; }
+      #status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+      #status .dot.ok { background: #2fa36b; } #status .dot.warn { background: #d99a1e; } #status .dot.err { background: #d33; }
+      .page { width: 100%; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PLaMo 翻訳</h1>
+      <a href="#" id="options" class="link">設定</a>
+    </header>
+    <textarea id="input" placeholder="翻訳するテキストを入力（⌘/Ctrl + Enter で翻訳）"></textarea>
+    <div class="row">
+      <select id="target" aria-label="翻訳先"></select>
+      <button id="translate" class="primary">翻訳</button>
+    </div>
+    <div id="output" aria-live="polite"></div>
+    <div class="row">
+      <button id="copy">コピー</button>
+    </div>
+    <button id="page" class="page">このページを翻訳 / 元に戻す</button>
+    <div id="status"><span class="dot"></span><span id="status-text">確認中…</span></div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

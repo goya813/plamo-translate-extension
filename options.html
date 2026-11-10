@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>PLaMo 翻訳 – 設定</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body { margin: 0; }
+      main { max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      h2 { font-size: 15px; margin: 32px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+      .lead { color: var(--muted); margin: 0 0 8px; }
+      .engines { display: grid; gap: 8px; }
+      .engine { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border);
+        border-radius: 10px; cursor: pointer; }
+      .engine:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+      .engine input { margin-top: 4px; }
+      .engine b { display: block; }
+      .engine span { color: var(--muted); font-size: 12px; }
+      .panel { margin-top: 12px; padding: 14px; border-radius: 10px; background: var(--subtle); display: grid; gap: 10px; }
+      .panel[hidden] { display: none; }
+      label.field { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; }
+      label.field.top { align-items: start; }
+      label.field > span { color: var(--muted); }
+      label.field input, label.field select, label.field textarea { width: 100%; box-sizing: border-box; }
+      .model { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 12px;
+        background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+      .model .meta { font-size: 12px; color: var(--muted); }
+      .model .actions { display: flex; gap: 6px; grid-row: span 2; }
+      progress { width: 100%; grid-column: 1 / -1; height: 6px; }
+      .test { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .test output { font-size: 12px; }
+      code { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+      .hint { font-size: 12px; color: var(--muted); margin: 0; }
+      footer { margin-top: 40px; font-size: 12px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PLaMo 翻訳 – 設定</h1>
+      <p class="lead">Preferred Networks の翻訳モデル PLaMo 3 Translate を使って、Web ページや選択したテキストを翻訳します。</p>
+
+      <h2>推論エンジン</h2>
+      <div class="engines">
+        <label class="engine"><input type="radio" name="engine" value="browser" />
+          <div><b>ブラウザ内（おすすめ）</b><span>モデルを拡張内に保存し、WebGPU / CPU で実行します。サーバーの準備は不要です。</span></div></label>
+        <label class="engine"><input type="radio" name="engine" value="ollama" />
+          <div><b>Ollama</b><span>ローカルの Ollama に接続します。8B などの大きいモデルも使えます。</span></div></label>
+        <label class="engine"><input type="radio" name="engine" value="openai" />
+          <div><b>llama-server / vLLM（OpenAI 互換 Completions API）</b><span>llama.cpp の llama-server などに接続します。</span></div></label>
+      </div>
+
+      <section class="panel" data-engine="browser">
+        <div id="models"></div>
+        <label class="field"><span>使うモデル</span><select id="browserModel"></select></label>
+        <label class="field"><span>デバイス</span>
+          <select id="device">
+            <option value="auto">自動（WebGPU があれば使用）</option>
+            <option value="gpu">WebGPU</option>
+            <option value="cpu">CPU</option>
+          </select></label>
+        <p class="hint" id="engine-info"></p>
+      </section>
+
+      <section class="panel" data-engine="ollama">
+        <label class="field"><span>URL</span><input type="url" id="ollamaUrl" /></label>
+        <label class="field"><span>モデル</span><input type="text" id="ollamaModel" /></label>
+        <p class="hint">事前に <code id="ollama-pull"></code> を実行してください。<br />
+          0.8B 以外に <code>hf.co/pfnet/plamo-3-translate-2b-GGUF:Q4_K_M</code>、<code>hf.co/pfnet/plamo-3-translate-8b-GGUF:Q4_K_M</code> なども使えます。</p>
+      </section>
+
+      <section class="panel" data-engine="openai">
+        <label class="field"><span>URL</span><input type="url" id="openaiUrl" /></label>
+        <label class="field"><span>モデル名</span><input type="text" id="openaiModel" /></label>
+        <p class="hint">例：<code>llama-server -hf pfnet/plamo-3-translate-0.8b-GGUF:Q4_K_M -c 16384 --port 8000 --alias plamo-3-translate</code></p>
+      </section>
+
+      <div class="test" style="margin-top: 12px">
+        <button id="test">接続テスト</button>
+        <output id="test-result" class="muted"></output>
+      </div>
+
+      <h2>翻訳</h2>
+      <div style="display: grid; gap: 10px">
+        <label class="field"><span>既定の翻訳先</span><select id="targetLang"></select></label>
+        <label class="field"><span>日本語の文体</span>
+          <select id="form">
+            <option value="">指定しない</option>
+            <option value="polite">敬体（です・ます）</option>
+            <option value="plain">常体（だ・である）</option>
+          </select></label>
+        <label class="field"><span>ページ翻訳の表示</span>
+          <select id="pageMode">
+            <option value="replace">原文を訳文に置き換える</option>
+            <option value="below">原文の下に訳文を表示する</option>
+          </select></label>
+        <label class="field"><span>選択時のボタン</span>
+          <span style="color: inherit"><input type="checkbox" id="selectionButton" /> テキストを選択したら「訳」ボタンを表示する</span></label>
+        <label class="field"><span>同時リクエスト数</span><input type="number" id="concurrency" min="1" max="16" /></label>
+        <label class="field top"><span>用語集</span>
+          <textarea id="glossary" rows="4" placeholder="dashboard => 管理画面&#10;Pull Request => プルリクエスト"></textarea></label>
+        <label class="field top"><span>参考文脈</span>
+          <textarea id="context" rows="3" placeholder="例：これはソフトウェア開発のドキュメントです。"></textarea></label>
+      </div>
+
+      <h2>使い方</h2>
+      <p class="hint">・テキストを選択 →「訳」ボタン、右クリック「PLaMo で翻訳」、または Alt+Shift+Y で選択範囲を翻訳<br />
+        ・ツールバーのアイコン →「このページを翻訳」、右クリック、または Alt+Shift+T でページ全体を翻訳 / 元に戻す</p>
+      <p class="hint" style="margin-top: 8px">ページ翻訳（既定 Alt+Shift+T）と選択範囲の翻訳（既定 Alt+Shift+Y）のキーは
+        <a href="#" id="shortcuts" class="link">chrome://extensions/shortcuts</a> で変更できます。</p>
+
+      <footer>
+        PLaMo 3 Translate は <a class="link" href="https://plamo.preferredai.jp/info/plamo-community-license-ja" target="_blank">PLaMo Community License</a>
+        のもとで提供されています（商用利用には登録が必要な場合があります）。Built with PLaMo.<br />
+        ブラウザ内エンジンは <a class="link" href="https://github.com/ngxson/wllama" target="_blank">wllama</a>（MIT）と llama.cpp（MIT）を使用しています。
+      </footer>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
