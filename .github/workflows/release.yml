@@ -1,0 +1,86 @@
+name: Release
+
+# main に push されたとき、manifest.json の version に対応するタグ（v0.2.0 など）がまだなければ、
+# 拡張の zip を作り、タグと GitHub Release を作成して添付する。version を上げてマージするとリリースされる。
+# 手動実行（workflow_dispatch）でも同じ判定でリリースする。タグが既にあれば zip を成果物にするだけ。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check sources
+        run: |
+          python3 -c 'import json; json.load(open("manifest.json"))'
+          node --check content.js
+          for f in background.js engine.js popup.js options.js lib/*.js; do
+            node --input-type=module --check < "$f"
+          done
+
+      - name: Decide the tag
+        id: version
+        run: |
+          version="$(python3 -c 'import json; print(json.load(open("manifest.json"))["version"])')"
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag は既にあるためリリースしません（リリースするには manifest.json の version を上げてください）"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package
+        id: package
+        run: echo "zip=$(scripts/package.sh dist)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plamo-local-translator
+          path: dist/*
+
+      - name: Create the tag and the release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          zip="$(basename "${{ steps.package.outputs.zip }}")"
+          cat > notes.md <<NOTES
+          ## インストール
+
+          1. 下の **${zip}** をダウンロードして展開します（\`plamo-local-translator\` フォルダができます）。
+          2. Chrome で \`chrome://extensions\` を開き、右上の「デベロッパー モード」をオンにします。
+          3. 「パッケージ化されていない拡張機能を読み込む」で、展開した \`plamo-local-translator\` フォルダを選びます。
+          4. 開いた設定画面で推論エンジンを選び、ブラウザ内ならモデルをダウンロードしてから「接続テスト」で確認します。
+
+          更新するときは、フォルダの中身を新しい版で置き換えてから \`chrome://extensions\` で再読み込みしてください
+          （同じフォルダを使えば、ダウンロード済みのモデルや設定は残ります）。
+
+          **非公式**：この拡張は有志による非公式のツールで、Preferred Networks の「PLaMo翻訳」とは関係ありません。
+          PLaMo 3 Translate のモデルは [PLaMo Community License](https://plamo.preferredai.jp/info/plamo-community-license-ja) に従って利用してください。Built with PLaMo.
+          NOTES
+          # タグは gh release create が --target のコミットに作る。
+          gh release create "$TAG" dist/* \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file notes.md \
+            --generate-notes
