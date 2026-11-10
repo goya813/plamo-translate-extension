@@ -1,4 +1,7 @@
-# PLaMo 翻訳（Chrome 拡張）
+# PLaMo Local Translator（Chrome 拡張）
+
+> **非公式**：この拡張は有志による非公式のツールです。Preferred Networks（PFN）および同社の翻訳サービス「PLaMo翻訳」とは関係がなく、
+> PFN による公認・保証を受けたものではありません。「PLaMo」は PFN の製品名です。
 
 Preferred Networks の翻訳特化 LLM [PLaMo 3 Translate](https://huggingface.co/pfnet/plamo-3-translate-0.8b) で、
 Web ページや選択したテキストをローカルで翻訳する Chrome 拡張です。
@@ -50,6 +53,9 @@ vendor/wllama/     wllama のビルド（PLaMo 3 対応版）
 ```
 
 ## ライセンスとクレジット
+
+- この拡張のソースコードは [MIT License](LICENSE) です（`vendor/` を除く）。同梱・流用したサードパーティのライセンスは
+  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) を参照してください。
 
 - PLaMo 3 Translate のモデルは [PLaMo Community License](https://plamo.preferredai.jp/info/plamo-community-license-ja) で提供されています。
   個人・非商用は無償で利用できます。商用利用は、売上 10 億円以下なら登録フォームでの登録、それを超える場合は別途契約が必要です。
