@@ -32,9 +32,22 @@ Web ページや選択したテキストをローカルで翻訳する Chrome �
 
 ## インストール
 
-1. `chrome://extensions` を開き、右上の「デベロッパー モード」をオンにします。
-2. 「パッケージ化されていない拡張機能を読み込む」でこのフォルダを選びます。
-3. 開いた設定画面でエンジンを選びます。ブラウザ内なら「ダウンロード」（0.8B は約 0.57 GB）を押し、「接続テスト」で確認します。
+1. [Releases](https://github.com/goya813/plamo-translate-extension/releases) から `plamo-local-translator-<version>.zip` をダウンロードして展開します
+   （リポジトリを clone した場合は、そのフォルダをそのまま使えます）。
+2. `chrome://extensions` を開き、右上の「デベロッパー モード」をオンにします。
+3. 「パッケージ化されていない拡張機能を読み込む」で、展開した `plamo-local-translator` フォルダを選びます。
+4. 開いた設定画面でエンジンを選びます。ブラウザ内なら「ダウンロード」（0.8B は約 0.57 GB）を押し、「接続テスト」で確認します。
+
+## リリース
+
+`manifest.json` の `version` を上げてコミットし、同じ番号のタグを push すると、GitHub Actions（`.github/workflows/release.yml`）が
+zip と SHA-256 を作って Release に添付します。タグと `version` が一致しないと失敗します。
+
+```sh
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+手元で zip を作るときは `scripts/package.sh` を実行します（`dist/` に出力）。
 
 ## ファイル構成
 
